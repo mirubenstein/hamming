@@ -1,56 +1,49 @@
-class Difference
+class CharacterComparer
+  attr_accessor :first, :second, :position
+
   def initialize(first:, second:, position:)
     @first = first
     @second = second
     @position = position
   end
+
+  def different?
+    first != second
+  end
 end
 
 
 class StringComparer
+  include Enumerable
+
+  attr_accessor :first_string, :second_string
+
   def initialize(first_string:, second_string:)
     @first_string = first_string
     @second_string = second_string
-    @differences = []
+    @character_comparers = []
+  end
+
+
+  def each
+    character_comparers.each { |character_comparer| yield character_comparer }
   end
 
 
   def equal_length?
-    @first_string.length == @second_string.length
+    first_string.length == second_string.length
   end
 
 
-  def differences
-    @differences ||= []
-    long_string.each_char.with_index(0) do |character, position|
-      unless character == short_string[position]
-        @differences << Difference.new(first: character, second: short_string[position], position: position)
+  def character_comparers
+    if @character_comparers.empty?
+      (0..([first_string.length, second_string.length].max - 1)).to_a.each do |position|
+        @character_comparers << CharacterComparer.new(first: first_string[position],
+                                                      second: second_string[position],
+                                                      position: position)
       end
     end
-    @differences
-  end
-
-
-  def difference_count
-    differences.count
-  end
-
-
-  def long_string
-    @long_string ||= if @first_string >= @second_string
-                       @first_string
-                     else
-                       @second_string
-                     end
-  end
-
-
-  def short_string
-    @short_string ||= if @first_string < @second_string
-                        @first_string
-                      else
-                        @second_string
-                      end
+    @character_comparers
   end
 end
 
@@ -59,9 +52,8 @@ class Hamming
   def self.compute(first_dna_strand, second_dna_strand)
     string_comparer = StringComparer.new(first_string: first_dna_strand, second_string: second_dna_strand)
     raise ArgumentError unless string_comparer.equal_length?
-    string_comparer.difference_count
+    string_comparer.select(&:different?).count
   end
-
 end
 
 
