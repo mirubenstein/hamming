@@ -1,6 +1,58 @@
-require_relative 'book_keeping'
-require_relative 'character_comparer'
-require_relative 'string_comparer'
+# Compare 2 characters
+class CharacterComparer
+  attr_reader :first, :second, :position
+
+  def initialize(first:, second:, position:)
+    @first = first
+    @second = second
+    @position = position
+  end
+
+  def different?
+    first != second
+  end
+end
+
+# Compare 2 strings
+class StringComparer
+  include Enumerable
+
+  attr_reader :first_string, :second_string
+
+  def initialize(first_string:, second_string:)
+    @first_string = first_string
+    @second_string = second_string
+    @character_comparers = []
+  end
+
+  def each
+    character_comparers.each { |character_comparer| yield character_comparer }
+  end
+
+  def equal_length?
+    first_string.length == second_string.length
+  end
+
+  private
+
+  def character_comparers
+    if @character_comparers.empty?
+      (0..last_position).to_a.each do |position|
+        @character_comparers << CharacterComparer.new(
+            first: first_string[position],
+            second: second_string[position],
+            position: position
+        )
+      end
+    end
+    @character_comparers
+  end
+
+  def last_position
+    [first_string.length, second_string.length].max - 1
+  end
+end
+
 
 # Calculate the Hamming difference between two DNA strands
 class Hamming
@@ -12,4 +64,9 @@ class Hamming
     raise ArgumentError unless string_comparer.equal_length?
     string_comparer.select(&:different?).count
   end
+end
+
+
+module BookKeeping
+  VERSION = 3
 end
